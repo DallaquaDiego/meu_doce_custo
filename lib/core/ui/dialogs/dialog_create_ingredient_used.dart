@@ -27,8 +27,7 @@ class _DialogCreateIngredientUsedState extends State<DialogCreateIngredientUsed>
   @override
   void initState() {
     super.initState();
-    // Inicializa o store passando o ingrediente usado e a receita (nula inicialmente)
-    createIngredientUsedStore = CreateIngredientUsedStore(widget.ingredientUsed, null);
+    createIngredientUsedStore = CreateIngredientUsedStore(ingredientUsed: widget.ingredientUsed);
   }
 
   @override
@@ -126,7 +125,12 @@ class _DialogCreateIngredientUsedState extends State<DialogCreateIngredientUsed>
                           ingredient: createIngredientUsedStore.ingredient,
                           quantity: int.parse(createIngredientUsedStore.quantity),
                         );
-                        Navigator.of(context).pop(ingredientUsed);
+                        Navigator.of(context).pop(
+                          IngredientUsed(
+                            ingredient: createIngredientUsedStore.ingredient,
+                            quantity: int.parse(createIngredientUsedStore.quantity),
+                          ),
+                        );
                       } : null,
                     ),
                   ),

@@ -1,7 +1,4 @@
-import 'package:get_it/get_it.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
-
-import '../stores/others/user_manager_store.dart';
 
 class RecipeCategory {
   RecipeCategory({
@@ -9,7 +6,7 @@ class RecipeCategory {
     this.name,
   });
 
-  int? id;
+  String? id;
   String? name;
 
   @override
@@ -17,20 +14,17 @@ class RecipeCategory {
     return 'Categoria{id: $id, name: $name}';
   }
 
-  Map<String, dynamic> toMap() {
-    final userManagerStore = GetIt.I<UserManagerStore>();
-    final user_id = userManagerStore.tokenData!.user!.id!;
-
-    return {
-      'name': name,
-      'user_id': user_id,
-    };
+  ParseObject toParseObject() {
+    final parseObject = ParseObject('RecipeCategory')
+      ..objectId = id
+      ..set('name', name!);
+    return parseObject;
   }
 
-  factory RecipeCategory.fromMap(Map<String, dynamic> map) {
+  factory RecipeCategory.fromParse(ParseObject parseObject) {
     return RecipeCategory(
-      id: map['id'],
-      name: (map['name'] ?? '') as String,
+      id: parseObject.objectId,
+      name: parseObject.get<String>('name'),
     );
   }
 }

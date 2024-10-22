@@ -140,8 +140,8 @@ abstract class _IngredientStore with Store {
     if (_page == 1) _listIngredient.clear();
 
     try {
-      final result = await IngredientRepository().findAllIngredients(page: _page, filterSearchStore: filterSearchStore);
-      addNewItems(result!);
+      final result = await IngredientRepository().getAllIngredients(page: _page, filterSearchStore: filterSearchStore);
+      addNewItems(result);
       setListSearch(result);
     } catch (e, s) {
       log('Store: Erro ao Carregar Ingredientes!', error: e.toString(), stackTrace: s);

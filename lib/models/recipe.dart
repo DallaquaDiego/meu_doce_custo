@@ -1,8 +1,4 @@
-
-import 'package:get_it/get_it.dart';
-
-import '../stores/others/user_manager_store.dart';
-import 'ingredient_used.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'recipe_category.dart';
 
 class Recipe {
@@ -11,39 +7,38 @@ class Recipe {
     this.name,
     this.cost,
     this.recipeCategory,
-    this.ingredientsUsed,
   });
 
-  int? id;
+  String? id;
   String? name;
-  double? cost;
+  num? cost;
   RecipeCategory? recipeCategory;
-  List<IngredientUsed>? ingredientsUsed;
 
   @override
   String toString() {
     return 'Receita{id: $id, name: $name, cost: $cost, recipeCategory: $recipeCategory}';
   }
 
-  Map<String, dynamic> toMap() {
-    final userManagerStore = GetIt.I<UserManagerStore>();
-    final user_id = userManagerStore.tokenData!.user!.id!;
+  ParseObject toParseObject() {
+    final parseObject = ParseObject('Recipe')
+      ..objectId = id
+      ..set('name', name ?? '')
+      ..set('cost', cost ?? 0)
+      ..set('recipe_category', ParseObject('RecipeCategory')..objectId = recipeCategory?.id,
+      );
 
-    return {
-      'name': name,
-      'cost': cost,
-      'recipe_category_id': recipeCategory!.id!,
-      'user_id': user_id,
-    };
+    return parseObject;
   }
 
-  factory Recipe.fromMap(Map<String, dynamic> map) {
+  factory Recipe.fromParse(ParseObject parseObject) {
     return Recipe(
-      id: map['id'],
-      name: (map['name'] ?? '') as String,
-      cost: map['cost'] is double ? (map['cost'] ?? 0.0) as double : (map['cost'] ?? 0).toDouble(),
-      recipeCategory: RecipeCategory.fromMap(map['category'] ?? {}),
-      ingredientsUsed: List<IngredientUsed>.from((map['ingredients_used'] ?? []).map((x) => IngredientUsed.fromMap(x))),
+      id: parseObject.objectId,
+      name: parseObject.get<String>('name'),
+      cost: parseObject.get<num>('cost'),
+      recipeCategory: parseObject.containsKey('recipe_category') &&
+          parseObject.get<ParseObject>('recipe_category') != null
+          ? RecipeCategory.fromParse(parseObject.get<ParseObject>('recipe_category')!)
+          : null,
     );
   }
 }

@@ -116,16 +116,16 @@ mixin _$CreateIngredientStore on _CreateIngredientStore, Store {
   late final _$_is_mlAtom =
       Atom(name: '_CreateIngredientStore._is_ml', context: context);
 
-  int get is_ml {
+  bool get is_ml {
     _$_is_mlAtom.reportRead();
     return super._is_ml;
   }
 
   @override
-  int get _is_ml => is_ml;
+  bool get _is_ml => is_ml;
 
   @override
-  set _is_ml(int value) {
+  set _is_ml(bool value) {
     _$_is_mlAtom.reportWrite(value, super._is_ml, () {
       super._is_ml = value;
     });
@@ -272,11 +272,11 @@ mixin _$CreateIngredientStore on _CreateIngredientStore, Store {
   }
 
   @override
-  void toggleIsMl(int value) {
+  void toggleIsMl() {
     final _$actionInfo = _$_CreateIngredientStoreActionController.startAction(
         name: '_CreateIngredientStore.toggleIsMl');
     try {
-      return super.toggleIsMl(value);
+      return super.toggleIsMl();
     } finally {
       _$_CreateIngredientStoreActionController.endAction(_$actionInfo);
     }

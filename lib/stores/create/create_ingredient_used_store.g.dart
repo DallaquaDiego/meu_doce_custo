@@ -129,7 +129,7 @@ mixin _$CreateIngredientUsedStore on _CreateIngredientUsedStore, Store {
       context: context);
 
   @override
-  Future<void> _createIngredientUsed() {
+  Future<IngredientUsed?> _createIngredientUsed() {
     return _$_createIngredientUsedAsyncAction
         .run(() => super._createIngredientUsed());
   }

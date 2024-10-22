@@ -108,7 +108,7 @@ class DialogBrand extends StatelessWidget {
                 );
               }
 
-              final uniqueList = brandStore.listSearch.fold<Map<int, Brand>>({}, (map, brand) {
+              final uniqueList = brandStore.listSearch.fold<Map<String, Brand>>({}, (map, brand) {
                 map[brand.id!] = brand;
                 return map;
               }).values.toList();

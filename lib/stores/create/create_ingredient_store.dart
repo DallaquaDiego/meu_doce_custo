@@ -22,9 +22,9 @@ class CreateIngredientStore = _CreateIngredientStore with _$CreateIngredientStor
 abstract class _CreateIngredientStore with Store {
   _CreateIngredientStore(this.ingredient) {
     _name = ingredient?.name ?? '';
-    _price = UtilBrasilFields.obterReal(ingredient?.price ?? 0.0, moeda: false);
+    _price = UtilBrasilFields.obterReal((ingredient?.price ?? 0.0).toDouble(), moeda: false);
     _size = ingredient?.size.toString() ?? '';
-    _is_ml = ingredient?.is_ml ?? 0;
+    _is_ml = ingredient?.is_ml ?? false;
     _brand = ingredient?.brand;
   }
 
@@ -86,10 +86,10 @@ abstract class _CreateIngredientStore with Store {
   }
 
   @readonly
-  int _is_ml = 0;
+  bool _is_ml = false;
 
   @action
-  void toggleIsMl(int value) => _is_ml = value;
+  void toggleIsMl() => !_is_ml;
 
   @computed
   bool get isMlValid => _is_ml != null;
@@ -189,10 +189,8 @@ abstract class _CreateIngredientStore with Store {
     ingredient!.is_ml = _is_ml;
     ingredient!.brand = _brand!;
 
-    print(ingredient);
-
     try {
-      await IngredientRepository().editIngredient(ingredient!);
+      await IngredientRepository().updateIngredient(ingredient!);
       setSavedOrUpdatedOrDeleted(true);
     } catch (e, s) {
       log('Store: Erro ao Editar Ingrediente!', error: e.toString(), stackTrace: s);

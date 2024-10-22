@@ -1,135 +1,80 @@
 // ignore_for_file: depend_on_referenced_packages
-
-import 'dart:convert';
 import 'dart:developer';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
-import 'package:http/http.dart' as http;
-
-import '../core/global/endpoints.dart';
 import '../models/ingredient.dart';
 import '../stores/others/filter_search_store.dart';
-import 'token_repository.dart';
 
 class IngredientRepository {
-  Future<void> createIngredient(Ingredient ingredient) async {
-    var url = Uri.parse(baseURL + ingredientURL);
-    final token = await TokenRepository().tokenString();
-
+  Future<ParseObject?> createIngredient(Ingredient ingredient) async {
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(ingredient.toMap()),
-      );
+      final parseObject = ingredient.toParseObject();
+      final response = await parseObject.save();
 
-      // log('Response status: ${response.statusCode}');
-      // log('Response body: ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
-        return;
+      if (response.success) {
+        return response.results?.first;
       } else {
-        log('Erro ao criar ingrediente. Status: ${response.statusCode}');
-        return Future.error(jsonDecode(response.body));
+        log('Erro ao criar Ingrediente: ${response.error?.message}');
+        return null;
       }
     } catch (e, s) {
-      log('Repository: Erro ao salvar Ingrediente!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao salvar Ingrediente!');
+      log('Repository: Erro ao Criar Ingrediente!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Criar Ingrediente');
     }
   }
 
-  //EDITAR
-  Future <void> editIngredient (Ingredient ingredient) async {
-    var url = Uri.parse(baseURL + ingredientURL + ingredient.id!.toString());
-    final token = await TokenRepository().tokenString();
-
+  Future<bool> updateIngredient(Ingredient ingredient) async {
     try {
-      final response = await http.put (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final parseObject = ingredient.toParseObject();
+      final response = await parseObject.save();
 
-        body: jsonEncode(ingredient.toMap()),
-      );
-
-      /*print('Put Brand');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if ( response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201 ) {
-        return Future.error (json.decode(response.body));
-      }
+      return response.success;
     } catch (e, s) {
-      log('Repository: Erro ao editar Ingrediente!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao editar Ingrediente!');
+      log('Repository: Erro ao Editar Ingrediente!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Editar Ingrediente');
     }
   }
 
-  //EXCLUIR
-  Future<void> deleteIngredient ( String id ) async {
-    var url = Uri.parse ( baseURL + ingredientURL + id );
-    final token = await TokenRepository().tokenString();
-
+  Future<bool> deleteIngredient(String ingredientId) async {
     try {
-      final response = await http.delete (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final parseObject = ParseObject('Ingredient')..objectId = ingredientId;
+      final response = await parseObject.delete();
 
-      /*print('Delete Ingredient');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if ( response.statusCode != 200 && response.statusCode != 204 ) {
-        return Future.error (json.decode(response.body));
-      }
+      return response.success;
     } catch (e, s) {
-      log('Repository: Erro ao deletar Ingrediente!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao deletar Ingrediente!');
+      log('Repository: Erro ao Deletar Ingrediente!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Deletar Ingrediente');
     }
   }
 
-  //LISTAGEM
-  Future <List<Ingredient>?> findAllIngredients ({int? page, FilterSearchStore? filterSearchStore}) async {
-    final token = await TokenRepository().tokenString();
+  Future<List<Ingredient>> getAllIngredients({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+    final query = QueryBuilder(ParseObject('Ingredient'));
 
-    String auxUrl = '$baseURL$ingredientURL?page=$page&limit=15';
+    query.includeObject(['brand']);
+    query.orderByAscending('name');
 
-    if ( filterSearchStore!.search != '' ) {
-      auxUrl = '$auxUrl&search=${filterSearchStore.search}';
+    if (page != null && page > 0) {
+      final int skip = (page - 1) * limit;
+      query.setAmountToSkip(skip);
+      query.setLimit(limit);
     }
-    final url = Uri.parse(auxUrl);
+
+    if (filterSearchStore != null && filterSearchStore.search.isNotEmpty) {
+      query.whereContains('name', filterSearchStore.search);
+    }
 
     try {
-      final response = await http.get (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if ( response.statusCode == 200 ) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
-        final List<Ingredient> ingredient = jsonData.map((h) => Ingredient.fromMap(h)).toList();
-        return ingredient;
+      final response = await query.query();
+      //print(response.results);
+      if (response.success && response.results != null) {
+        final ingredients = response.results!.map((pl) => Ingredient.fromParse(pl)).toList();
+        return ingredients;
       } else {
-        return Future.error(json.decode(response.body));
+        return [];
       }
     } catch (e, s) {
-      log('Repository: Erro ao buscar Ingredientes!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao buscar Ingredientes!');
+      log('Repository: Erro ao Buscar Ingredientes!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Buscar Ingredientes');
     }
   }
 }

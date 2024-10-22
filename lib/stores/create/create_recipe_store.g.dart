@@ -88,6 +88,22 @@ mixin _$CreateRecipeStore on _CreateRecipeStore, Store {
     });
   }
 
+  late final _$ingredientsFutureAtom =
+      Atom(name: '_CreateRecipeStore.ingredientsFuture', context: context);
+
+  @override
+  ObservableFuture<List<IngredientUsed>>? get ingredientsFuture {
+    _$ingredientsFutureAtom.reportRead();
+    return super.ingredientsFuture;
+  }
+
+  @override
+  set ingredientsFuture(ObservableFuture<List<IngredientUsed>>? value) {
+    _$ingredientsFutureAtom.reportWrite(value, super.ingredientsFuture, () {
+      super.ingredientsFuture = value;
+    });
+  }
+
   late final _$_selectedIngredientsAtom =
       Atom(name: '_CreateRecipeStore._selectedIngredients', context: context);
 
@@ -193,6 +209,24 @@ mixin _$CreateRecipeStore on _CreateRecipeStore, Store {
     return _$deleteRecipeAsyncAction.run(() => super.deleteRecipe());
   }
 
+  late final _$loadIngredientsUsedAsyncAction =
+      AsyncAction('_CreateRecipeStore.loadIngredientsUsed', context: context);
+
+  @override
+  Future<void> loadIngredientsUsed(String recipeId) {
+    return _$loadIngredientsUsedAsyncAction
+        .run(() => super.loadIngredientsUsed(recipeId));
+  }
+
+  late final _$updateIngredientsAsyncAction =
+      AsyncAction('_CreateRecipeStore.updateIngredients', context: context);
+
+  @override
+  Future<void> updateIngredients(List<IngredientUsed> newIngredients) {
+    return _$updateIngredientsAsyncAction
+        .run(() => super.updateIngredients(newIngredients));
+  }
+
   late final _$_CreateRecipeStoreActionController =
       ActionController(name: '_CreateRecipeStore', context: context);
 
@@ -276,6 +310,7 @@ mixin _$CreateRecipeStore on _CreateRecipeStore, Store {
   @override
   String toString() {
     return '''
+ingredientsFuture: ${ingredientsFuture},
 error: ${error},
 showErrors: ${showErrors},
 nameValid: ${nameValid},

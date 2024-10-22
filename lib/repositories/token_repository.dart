@@ -1,32 +1,22 @@
-// ignore_for_file: depend_on_referenced_packages
-
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/global/endpoints.dart';
 import '../models/access_token.dart';
 
 class TokenRepository {
-  Future<AccessToken?> loginAPI(String email, String password) async {
+  Future<AccessToken?> loginParse(String email, String password) async {
     final now = DateTime.now();
     SharedPreferences shared = await SharedPreferences.getInstance();
-    var url = Uri.parse(baseURL + loginURL);
-    var response = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: json.encode({
-        "email": email,
-        "password": password,
-      }),
-    );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      await shared.setString('token', "${jsonDecode(response.body)['AccessToken']}");
+    final user = ParseUser(email, password, null);
+    final response = await user.login();
+
+    if (response.success && response.result != null) {
+      final sessionToken = (response.result as ParseUser).sessionToken!;
+      await shared.setString('token', sessionToken);
       await shared.setString('token_timestamp', now.toIso8601String());
-      final tokenData = AccessToken.fromMap(json.decode(response.body));
+
+      final tokenData = AccessToken(token: sessionToken);
       return tokenData;
     } else {
       return null;
@@ -44,6 +34,7 @@ class TokenRepository {
 
       const Duration tokenExpirationDuration = Duration(hours: 1);
 
+      // Verifica se o token ainda é válido
       if (tokenDuration <= tokenExpirationDuration) {
         return true;
       } else {
@@ -63,7 +54,13 @@ class TokenRepository {
   Future<bool> exit() async {
     SharedPreferences shared = await SharedPreferences.getInstance();
     await shared.clear();
+
+    // Fazendo logout no Parse
+    final currentUser = await ParseUser.currentUser() as ParseUser?;
+    if (currentUser != null) {
+      await currentUser.logout();
+    }
+
     return true;
   }
 }
-

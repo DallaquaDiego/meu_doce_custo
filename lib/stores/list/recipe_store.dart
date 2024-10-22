@@ -1,3 +1,5 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:developer';
 import 'package:get_it/get_it.dart';
 import 'package:mobx/mobx.dart';
@@ -137,8 +139,8 @@ abstract class _RecipeStore with Store {
     if (_page == 1) _listRecipe.clear();
 
     try {
-      final result = await RecipeRepository().findAllRecipes(page: _page, filterSearchStore: filterSearchStore);
-      addNewItems(result!);
+      final result = await RecipeRepository().getAllRecipes(page: _page, filterSearchStore: filterSearchStore);
+      addNewItems(result);
       setListSearch(result);
     } catch (e, s) {
       log('Store: Erro ao Carregar Receitas!', error: e.toString(), stackTrace: s);

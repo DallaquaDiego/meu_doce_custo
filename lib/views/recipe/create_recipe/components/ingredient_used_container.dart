@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 import '../../../../core/global/custom_colors.dart';
 import '../../../../core/ui/dialogs/dialog_create_ingredient_used.dart';
@@ -8,12 +6,12 @@ import 'ingredient_info_container.dart';
 
 class IngredientUsedContainer extends StatefulWidget {
   final Function(List<IngredientUsed>) onIngredientsChanged;
-  final List<IngredientUsed> ingredientsUsed;
+  final List<IngredientUsed> initialIngredients;
 
   const IngredientUsedContainer({
     Key? key,
     required this.onIngredientsChanged,
-    this.ingredientsUsed = const [],
+    this.initialIngredients = const [],
   }) : super(key: key);
 
   @override
@@ -21,26 +19,44 @@ class IngredientUsedContainer extends StatefulWidget {
 }
 
 class _IngredientUsedContainerState extends State<IngredientUsedContainer> {
-  late List<IngredientUsed> ingredientsUsed;
+  late List<IngredientUsed> _ingredientsUsed;
 
+  @override
   @override
   void initState() {
     super.initState();
-    ingredientsUsed = widget.ingredientsUsed;
+    _ingredientsUsed = List<IngredientUsed>.from(widget.initialIngredients);
   }
 
-  void addIngredientUsed(IngredientUsed newIngredient) {
+  void _addIngredientUsed(IngredientUsed newIngredient) {
     setState(() {
-      ingredientsUsed.add(newIngredient);
+      _ingredientsUsed.add(newIngredient);
     });
-    widget.onIngredientsChanged(ingredientsUsed);
+
+    widget.onIngredientsChanged(_ingredientsUsed);
   }
 
-  void removeIngredientUsed(IngredientUsed ingredient) {
+  void _removeIngredientUsed(IngredientUsed ingredient) {
     setState(() {
-      ingredientsUsed.remove(ingredient);
+      _ingredientsUsed.remove(ingredient);
     });
-    widget.onIngredientsChanged(ingredientsUsed);
+
+    widget.onIngredientsChanged(_ingredientsUsed);
+  }
+
+  Future<void> showCreateIngredientDialog() async {
+    final newIngredient = await showDialog<IngredientUsed>(
+      context: context,
+      builder: (BuildContext context) {
+        return const DialogCreateIngredientUsed();
+      },
+    );
+
+    if (newIngredient != null) {
+      _addIngredientUsed(newIngredient);
+      await Future.delayed(const Duration(milliseconds: 50));
+      setState(() {});
+    }
   }
 
   @override
@@ -61,9 +77,7 @@ class _IngredientUsedContainerState extends State<IngredientUsedContainer> {
             ],
           ),
           padding: const EdgeInsets.all(16),
-          constraints: const BoxConstraints(
-            minHeight: 250,
-          ),
+          constraints: const BoxConstraints(minHeight: 250),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -78,14 +92,14 @@ class _IngredientUsedContainerState extends State<IngredientUsedContainer> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (ingredientsUsed.isNotEmpty)
+              if (_ingredientsUsed.isNotEmpty)
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
-                  children: ingredientsUsed.map((ingredient) {
+                  children: _ingredientsUsed.map((ingredient) {
                     return IngredientInfoContainer(
                       ingredientUsed: ingredient,
-                      onRemove: () => removeIngredientUsed(ingredient),
+                      onRemove: () => _removeIngredientUsed(ingredient),
                     );
                   }).toList(),
                 ),
@@ -97,18 +111,7 @@ class _IngredientUsedContainerState extends State<IngredientUsedContainer> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton(
-            onPressed: () async {
-              final result = await showDialog<IngredientUsed>(
-                context: context,
-                builder: (BuildContext context) {
-                  return const DialogCreateIngredientUsed();
-                },
-              );
-
-              if (result != null) {
-                addIngredientUsed(result);
-              }
-            },
+            onPressed: showCreateIngredientDialog,
             backgroundColor: CustomColors.sweet_cream,
             child: const Icon(Icons.add, size: 40, color: CustomColors.mint),
           ),

@@ -113,10 +113,6 @@ class BrandScreen extends StatelessWidget {
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
                           if (index < brandStore.listBrand.length) {
-                            final uniqueList = brandStore.listBrand.fold<Map<int, Brand>>({}, (map, brand) {
-                              map[brand.id!] = brand;
-                              return map;
-                            }).values.toList();
                             final brand = brandStore.listBrand[index];
                             return Column(
                               children: [

@@ -1,132 +1,102 @@
 // ignore_for_file: depend_on_referenced_packages
 
-import 'dart:convert';
 import 'dart:developer';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
-import 'package:http/http.dart' as http;
-
-import '../core/global/endpoints.dart';
 import '../models/ingredient_used.dart';
 import '../stores/others/filter_search_store.dart';
-import 'token_repository.dart';
 
 class IngredientUsedRepository {
-  Future<void> createIngredientUsed (IngredientUsed ingredientUsed) async {
-
-    var url = Uri.parse (baseURL + ingredientUsedURL) ;
-    final token = await TokenRepository().tokenString();
-
+  Future<ParseObject?> createIngredientUsed(IngredientUsed ingredientUsed) async {
     try {
-      final response = await http.post (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(ingredientUsed.toMap()),
-      );
+      final parseObject = ingredientUsed.toParseObject();
+      final response = await parseObject.save();
 
-      // print('Post IngredientUsed');
-      // print(ingredientUsed);
-      // print(response.statusCode);
-      // print(response.body);
-
-      if (response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201) {
-        return Future.error(json.decode(response.body));
-      }
-    } catch (e, s) {
-      log('Repository: Erro ao salvar Ingrediente Utilizado!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao salvar Ingrediente Utilizado!');
-    }
-  }
-
-  //EDITAR
-  Future <void> editIngredientUsed (IngredientUsed ingredientUsed) async {
-    var url = Uri.parse(baseURL + ingredientUsedURL + ingredientUsed.id!.toString());
-    final token = await TokenRepository().tokenString();
-
-    try {
-      final response = await http.put (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-
-        body: jsonEncode(ingredientUsed.toMap()),
-      );
-
-      /*print('Put IngredientUsed');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if ( response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201 ) {
-        return Future.error (json.decode(response.body));
-      }
-    } catch (e, s) {
-      log('Repository: Erro ao editar Ingrediente Utilizado!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao editar Ingrediente Utilizado!');
-    }
-  }
-
-  //EXCLUIR
-  Future<void> deleteIngredientUsed ( String id ) async {
-    var url = Uri.parse ( baseURL + ingredientUsedURL + id );
-    final token = await TokenRepository().tokenString();
-
-    try {
-      final response = await http.delete (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      print('Delete IngredientUsed');
-      print(response.statusCode);
-      print(response.body);
-
-      if ( response.statusCode != 200 && response.statusCode != 204 ) {
-        return Future.error (json.decode(response.body));
-      }
-    } catch (e, s) {
-      log('Repository: Erro ao deletar Ingrediente Utilizado!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao deletar Ingrediente Utilizado!');
-    }
-  }
-
-  //LISTAGEM
-  Future <List<IngredientUsed>?> findAllIngredientUsed ({int? page, FilterSearchStore? filterSearchStore}) async {
-    final token = await TokenRepository().tokenString();
-
-    String auxUrl = '$baseURL$ingredientUsedURL?page=$page&limit=15';
-
-    final url = Uri.parse(auxUrl);
-
-    try {
-      final response = await http.get (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if ( response.statusCode == 200 ) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
-        final List<IngredientUsed> ingredientUsed = jsonData.map((h) => IngredientUsed.fromMap(h)).toList();
-        return ingredientUsed;
+      if (response.success) {
+        return response.results?.first;
       } else {
-        return Future.error(json.decode(response.body));
+        log('Erro ao criar Ingrediente Usado: ${response.error?.message}');
+        return null;
       }
     } catch (e, s) {
-      log('Repository: Erro ao buscar Ingrediente Utilizados!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao buscar Ingrediente Utilizados!');
+      log('Repository: Erro ao Criar Ingrediente Usado!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Criar Ingrediente Usado');
+    }
+  }
+
+  Future<List<IngredientUsed>> getIngredientsUsedByRecipe(String recipeId) async {
+    try {
+      final query = QueryBuilder<ParseObject>(ParseObject('IngredientUsed'))
+        ..whereEqualTo('recipe', ParseObject('Recipe')..objectId = recipeId)
+        ..includeObject(['ingredient', 'ingredient.brand']);
+
+      final response = await query.query();
+
+      if (response.success && response.results != null) {
+        return response.results!
+            .map((e) => IngredientUsed.fromParse(e))
+            .toList();
+      } else {
+        return [];
+      }
+    } catch (e, s) {
+      log('Erro ao buscar IngredientsUsed!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao buscar IngredientsUsed');
+    }
+  }
+
+  Future<bool> updateIngredientUsed(IngredientUsed ingredientUsed) async {
+    try {
+      final parseObject = ingredientUsed.toParseObject();
+      final response = await parseObject.save();
+
+      return response.success;
+    } catch (e, s) {
+      log('Repository: Erro ao Editar Ingrediente Usado!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Editar Ingrediente Usado');
+    }
+  }
+
+  Future<bool> deleteIngredientUsed(String ingredientUsedId) async {
+    try {
+      final parseObject = ParseObject('IngredientUsed')..objectId = ingredientUsedId;
+      final response = await parseObject.delete();
+
+      return response.success;
+    } catch (e, s) {
+      log('Repository: Erro ao Deletar Ingrediente Usado!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Deletar Ingrediente Usado');
+    }
+  }
+
+  Future<List<IngredientUsed>> getAllIngredientsUsed({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+    final query = QueryBuilder(ParseObject('IngredientUsed'));
+
+    query.includeObject(['ingredient']);
+    query.orderByAscending('name');
+
+    if (page != null && page > 0) {
+      final int skip = (page - 1) * limit;
+      query.setAmountToSkip(skip);
+      query.setLimit(limit);
+    }
+
+    if (filterSearchStore != null && filterSearchStore.search.isNotEmpty) {
+      query.whereContains('name', filterSearchStore.search);
+    }
+
+    try {
+      final response = await query.query();
+      //print(response.results);
+      if (response.success && response.results != null) {
+        final ingredientUseds = response.results!.map((pl) => IngredientUsed.fromParse(pl)).toList();
+        return ingredientUseds;
+      } else {
+        return [];
+      }
+    } catch (e, s) {
+      log('Repository: Erro ao Buscar Ingrediente Usados!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Buscar Ingrediente Usados');
     }
   }
 }

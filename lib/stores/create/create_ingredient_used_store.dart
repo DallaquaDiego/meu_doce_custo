@@ -19,13 +19,13 @@ part 'create_ingredient_used_store.g.dart';
 class CreateIngredientUsedStore = _CreateIngredientUsedStore with _$CreateIngredientUsedStore;
 
 abstract class _CreateIngredientUsedStore with Store {
-  _CreateIngredientUsedStore(this.ingredientUsed, this.recipe) {
+  _CreateIngredientUsedStore({this.ingredientUsed, this.recipe}) {
     _quantity = ingredientUsed?.quantity.toString() ?? '0';
     _ingredient = ingredientUsed?.ingredient;
   }
 
   late IngredientUsed? ingredientUsed;
-  late Recipe? recipe;
+  late final Recipe? recipe;
 
   @readonly
   String _quantity = '';
@@ -94,24 +94,29 @@ abstract class _CreateIngredientUsedStore with Store {
   dynamic get createPressed => isFormValid ? _createIngredientUsed : null;
 
   @action
-  Future<void> _createIngredientUsed() async {
+  Future<IngredientUsed?> _createIngredientUsed() async {
     setError(null);
     setLoading(true);
 
+    num cost = _ingredient!.price! * int.tryParse(_quantity)! / _ingredient!.size!;
+
     ingredientUsed = IngredientUsed(
       ingredient: _ingredient,
-      recipe: recipe,
+      parcial_cost: cost,
       quantity: int.parse(_quantity),
+      recipe: recipe,
     );
 
     try {
       await IngredientUsedRepository().createIngredientUsed(ingredientUsed!);
+      return ingredientUsed;
     } catch (e, s) {
       log('Store: Erro ao Criar Ingrediente Usado!', error: e.toString(), stackTrace: s);
       setError(e.toString());
+      return null;
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   @action

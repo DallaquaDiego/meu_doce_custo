@@ -1,139 +1,83 @@
 // ignore_for_file: depend_on_referenced_packages
 
-import 'dart:convert';
 import 'dart:developer';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
-import 'package:http/http.dart' as http;
-
-import '../core/global/endpoints.dart';
 import '../models/recipe.dart';
 import '../stores/others/filter_search_store.dart';
-import 'token_repository.dart';
 
 class RecipeRepository {
-  Future<void> createRecipe(Recipe recipe) async {
-
-    var url = Uri.parse (baseURL + recipeURL) ;
-    final token = await TokenRepository().tokenString();
-
+  Future<ParseObject?> createRecipe(Recipe recipe) async {
     try {
-      final response = await http.post (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(recipe.toMap()),
-      );
+      final parseObject = recipe.toParseObject();
+      final response = await parseObject.save();
 
-      /*print('Post Recipe');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseBody = jsonDecode(response.body);
-
-        recipe.id = responseBody['id'];
+      if (response.success) {
+        return response.results?.first;
       } else {
-        throw Exception('Erro ao criar receita: ${response.body}');
+        log('Erro ao criar Receita: ${response.error?.message}');
+        return null;
       }
     } catch (e, s) {
-      log('Repository: Erro ao criar Receita!', error: e.toString(), stackTrace: s);
-      throw Exception('Erro ao criar Receita');
+      log('Repository: Erro ao Criar Receita!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Criar Receita');
     }
   }
 
-  //EDITAR
-  Future <void> editRecipe (Recipe recipe) async {
-    var url = Uri.parse(baseURL + recipeURL + recipe.id!.toString());
-    final token = await TokenRepository().tokenString();
-
+  Future<bool> updateRecipe(Recipe recipe) async {
     try {
-      final response = await http.put (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final parseObject = recipe.toParseObject();
+      final response = await parseObject.save();
 
-        body: jsonEncode(recipe.toMap()),
-      );
-
-      // print('Put Recipe');
-      // print(response.statusCode);
-      // print(response.body);
-
-      if ( response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201 ) {
-        return Future.error (json.decode(response.body));
-      }
+      return response.success;
     } catch (e, s) {
-      log('Repository: Erro ao editar Receita!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao editar Receita!');
+      log('Repository: Erro ao Editar Receita!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Editar Receita');
     }
   }
 
-  //EXCLUIR
-  Future<void> deleteRecipe ( String id ) async {
-    var url = Uri.parse ( baseURL + recipeURL + id );
-    final token = await TokenRepository().tokenString();
-
+  Future<bool> deleteRecipe(String recipeId) async {
     try {
-      final response = await http.delete (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final parseObject = ParseObject('Recipe')..objectId = recipeId;
+      final response = await parseObject.delete();
 
-      // print('Delete Recipe');
-      // print(response.statusCode);
-      // print(response.body);
-
-      if ( response.statusCode != 200 && response.statusCode != 204 ) {
-        return Future.error (json.decode(response.body));
-      }
+      return response.success;
     } catch (e, s) {
-      log('Repository: Erro ao deletar Receita!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao deletar Receita!');
+      log('Repository: Erro ao Deletar Receita!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Deletar Receita');
     }
   }
 
-  //LISTAGEM
-  Future <List<Recipe>?> findAllRecipes ({int? page, FilterSearchStore? filterSearchStore}) async {
-    final token = await TokenRepository().tokenString();
+  Future<List<Recipe>> getAllRecipes({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+    final query = QueryBuilder(ParseObject('Recipe'));
 
-    String auxUrl = '$baseURL$recipeURL?page=$page&limit=15';
+    query.includeObject(['recipe_category', 'ingredients_used.ingredient', 'ingredients_used.ingredient.brand']);
+    query.orderByAscending('name');
 
-    if (filterSearchStore!.search != '') {
-      auxUrl = '$auxUrl&search=${filterSearchStore.search}';
+    if (page != null && page > 0) {
+      final int skip = (page - 1) * limit;
+      query.setAmountToSkip(skip);
+      query.setLimit(limit);
     }
 
-    final url = Uri.parse(auxUrl);
+    if (filterSearchStore != null && filterSearchStore.search.isNotEmpty) {
+      query.whereContains('name', filterSearchStore.search);
+    }
 
     try {
-      final response = await http.get (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if ( response.statusCode == 200 ) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
-        final List<Recipe> recipe = jsonData.map((h) => Recipe.fromMap(h)).toList();
-        return recipe;
+      final response = await query.query();
+      //print(response.results);
+      if (response.success && response.results != null) {
+        final recipes = response.results!.map((pl) =>
+            Recipe.fromParse(pl)).toList();
+        return recipes;
       } else {
-        return Future.error(json.decode(response.body));
+        return [];
       }
     } catch (e, s) {
-      log('Repository: Erro ao buscar Receitas!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao buscar Receitas!');
+      log('Repository: Erro ao Buscar Receitas!',
+          error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Buscar Receitas');
     }
   }
 }

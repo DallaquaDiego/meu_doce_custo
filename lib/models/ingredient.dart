@@ -1,8 +1,5 @@
 // ignore_for_file: non_constant_identifier_names
-
-import 'package:get_it/get_it.dart';
-
-import '../stores/others/user_manager_store.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import 'brand.dart';
 
 class Ingredient {
@@ -13,49 +10,41 @@ class Ingredient {
     this.size,
     this.is_ml,
     this.brand,
-    this.user_id,
   });
 
-  int? id;
+  String? id;
   String? name;
-  double? price;
-  int? size;
-  int? is_ml;
-  int? user_id;
+  num? price;
+  num? size;
+  bool? is_ml;
   Brand? brand;
 
   @override
   String toString() {
-    return 'Ingredient{id: $id, name: $name, user_id: $user_id, price: $price, size: $size, is_ml: $is_ml, brand: $brand}';
+    return 'Ingredient{id: $id, name: $name, price: $price, size: $size, is_ml: $is_ml, brand: $brand}';
   }
 
-  Map<String, dynamic> toMap() {
-    final userManagerStore = GetIt.I<UserManagerStore>();
-    if (userManagerStore.tokenData != null && userManagerStore.tokenData!.user != null) {
-      user_id = userManagerStore.tokenData!.user!.id!;
-
-      return {
-        'name': name,
-        'price': price,
-        'size': size,
-        'is_ml': is_ml,
-        'brand_id': brand!.id!,
-        'user_id': user_id,
-      };
-    } else {
-      throw Exception("Usuário não autenticado. Não é possível criar o ingrediente.");
-    }
+  ParseObject toParseObject() {
+    final parseObject = ParseObject('Ingredient')
+      ..objectId = id
+      ..set('name', name!)
+      ..set('price', price!)
+      ..set('size', size!)
+      ..set('is_ml', is_ml!)
+      ..set('brand', brand!.toParseObject());
+    return parseObject;
   }
 
-  factory Ingredient.fromMap(Map<String, dynamic> map) {
+  factory Ingredient.fromParse(ParseObject parseObject) {
     return Ingredient(
-      id: map['id'],
-      user_id: map['user'] != null ? map['user']['id'] as int : 0,
-      name: (map['name'] ?? '') as String,
-      price: map['price'] is double ? (map['price'] ?? 0.0) as double : (map['price'] ?? 0).toDouble(),
-      size: (map['size'] ?? 0) as int,
-      is_ml: (map['is_ml'] ?? false) as int,
-      brand: Brand.fromMap(map['brand'] ?? {}),
+      id: parseObject.objectId,
+      name: parseObject.get<String>('name'),
+      price: parseObject.get<num>('price'),
+      size: parseObject.get<num>('size'),
+      is_ml: parseObject.get<bool>('is_ml'),
+      brand: parseObject.containsKey('brand') && parseObject.get<ParseObject>('brand') != null
+          ? Brand.fromParse(parseObject.get<ParseObject>('brand')!)
+          : null,
     );
   }
 }

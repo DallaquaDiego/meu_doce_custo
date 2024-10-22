@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:get_it/get_it.dart';
 import 'package:meu_doce_custo/core/ui/dialogs/dialog_recipe_category.dart';
+import 'package:meu_doce_custo/stores/create/create_ingredient_used_store.dart';
 import '../../../core/ui/custom_field.dart';
+import '../../../models/ingredient_used.dart';
 import '../../../models/recipe.dart';
 import 'package:mobx/mobx.dart';
 
@@ -29,6 +31,7 @@ class CreateRecipeScreen extends StatefulWidget {
 class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
   late bool editing;
   late final CreateRecipeStore createRecipeStore;
+  late final CreateIngredientUsedStore createIngredientUsedStore;
   final recipeStore = GetIt.I<RecipeStore>();
   late ReactionDisposer reactionDisposer;
 
@@ -68,7 +71,9 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery
+        .of(context)
+        .size;
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -95,42 +100,66 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                               const SizedBox(height: 15),
                               TitleTextForm(title: 'Nome da Receita'),
                               Observer(
-                                builder: (context) => CustomFormField(
-                                  initialvalue: createRecipeStore.name,
-                                  onChanged: createRecipeStore.setName,
-                                  error: createRecipeStore.nameError,
-                                  secret: false,
-                                ),
+                                builder: (context) =>
+                                    CustomFormField(
+                                      initialvalue: createRecipeStore.name,
+                                      onChanged: createRecipeStore.setName,
+                                      error: createRecipeStore.nameError,
+                                      secret: false,
+                                    ),
                               ),
-
                               TitleTextForm(title: 'Categoria da Receita'),
                               Padding(
-                                padding: const EdgeInsets.only(top: 8.0, bottom: 12),
+                                padding: const EdgeInsets.only(
+                                    top: 8.0, bottom: 12),
                                 child: Observer(
-                                  builder: (context) => CustomField(
-                                    onTap: () async {
-                                      final result = await showDialog(
-                                        context: context,
-                                        builder: (context) => DialogRecipeCategory(
-                                            selectedRecipeCategory: createRecipeStore.recipeCategory
-                                        ),
-                                      );
-                                      if (result != null) {
-                                        createRecipeStore.setRecipeCategory(result);
-                                      }
-                                    },
-                                    title: createRecipeStore.recipeCategory?.name ?? "Selecione a Categoria",
-                                    borderColor: createRecipeStore.recipeCategoryError != null ? Colors.red.shade700 : CustomColors.mint.withAlpha(50),
-                                    error: createRecipeStore.recipeCategoryError,
-                                    clearOnPressed: null,
-                                  ),
+                                  builder: (context) =>
+                                      CustomField(
+                                        onTap: () async {
+                                          final result = await showDialog(
+                                            context: context,
+                                            builder: (context) => DialogRecipeCategory(selectedRecipeCategory: createRecipeStore.recipeCategory),
+                                          );
+                                          if (result != null) {
+                                            createRecipeStore.setRecipeCategory(
+                                                result);
+                                          }
+                                        },
+                                        title: createRecipeStore.recipeCategory
+                                            ?.name ?? "Selecione a Categoria",
+                                        borderColor: createRecipeStore
+                                            .recipeCategoryError != null
+                                            ? Colors.red.shade700
+                                            : CustomColors.mint.withAlpha(50),
+                                        error: createRecipeStore
+                                            .recipeCategoryError,
+                                        clearOnPressed: null,
+                                      ),
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              IngredientUsedContainer(
-                                ingredientsUsed: createRecipeStore.selectedIngredients!.toList(),
-                                onIngredientsChanged: (ingredients) {
-                                  createRecipeStore.addIngredients(ingredients);
+
+                              FutureBuilder<List<IngredientUsed>>(
+                                future: createRecipeStore.ingredientsFuture,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(
+                                        color: CustomColors.mint,
+                                      ),
+                                    );
+                                  }
+
+                                  // Garante que ingredientes são carregados ou inicializa com lista vazia.
+                                  final ingredients = snapshot.data ?? [];
+
+                                  return IngredientUsedContainer(
+                                    initialIngredients: ingredients,
+                                    onIngredientsChanged: (newIngredients) {
+                                      // Atualiza a lista local e no banco, sem sobrescrever com o FutureBuilder.
+                                      createRecipeStore.updateIngredients(newIngredients);
+                                    },
+                                  );
                                 },
                               ),
                             ],
@@ -141,7 +170,8 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(16),
-                    child: editing ? Row(
+                    child: editing
+                        ? Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
@@ -151,30 +181,36 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                             textColor: CustomColors.lipstick_pink,
                             text: 'Excluir',
                             largura: screenSize.width * 0.3,
-                            function: editing ? () async {
+                            function: editing
+                                ? () async {
                               await createRecipeStore.deleteRecipe();
-                            } : null,
+                            }
+                                : null,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           flex: 6,
                           child: Observer(
-                            builder: (context) => GestureDetector(
-                              onTap: () => createRecipeStore.invalidSendPressed(),
-                              child: PatternedButton(
-                                color: CustomColors.gay_pink,
-                                text: 'Salvar',
-                                largura: screenSize.width * 0.65,
-                                function: createRecipeStore.isFormValid ? () async {
-                                  if (editing) {
-                                    await createRecipeStore.editPressed();
-                                  } else {
-                                    await createRecipeStore.createPressed();
-                                  }
-                                } : null,
-                              ),
-                            ),
+                            builder: (context) =>
+                                GestureDetector(
+                                  onTap: () =>
+                                      createRecipeStore.invalidSendPressed(),
+                                  child: PatternedButton(
+                                    color: CustomColors.gay_pink,
+                                    text: 'Salvar',
+                                    largura: screenSize.width * 0.65,
+                                    function: createRecipeStore.isFormValid
+                                        ? () async {
+                                      if (editing) {
+                                        await createRecipeStore.editPressed();
+                                      } else {
+                                        await createRecipeStore.createPressed();
+                                      }
+                                    }
+                                        : null,
+                                  ),
+                                ),
                           ),
                         ),
                       ],
@@ -183,22 +219,24 @@ class _CreateRecipeScreenState extends State<CreateRecipeScreen> {
                         Expanded(
                           flex: 6,
                           child: Observer(
-                            builder: (context) => GestureDetector(
-                              onTap: () => createRecipeStore.invalidSendPressed(),
-                              child: PatternedButton(
-                                color: CustomColors.gay_pink,
-                                text: 'Salvar',
-                                largura: screenSize.width * 0.95,
-                                function: createRecipeStore.isFormValid ? () async {
-                                  if (editing) {
-                                    await createRecipeStore.editPressed();
-                                  } else {
-                                    print(createRecipeStore.recipe);
-                                    await createRecipeStore.createPressed();
-                                  }
-                                } : null,
-                              ),
-                            ),
+                            builder: (context) =>
+                                GestureDetector(
+                                  onTap: () =>
+                                      createRecipeStore.invalidSendPressed(),
+                                  child: PatternedButton(
+                                    color: CustomColors.gay_pink,
+                                    text: 'Salvar',
+                                    largura: screenSize.width * 0.95,
+                                    function: createRecipeStore.isFormValid
+                                        ? () async {
+                                      if (editing) {
+                                        await createRecipeStore.editPressed();
+                                      } else {
+                                        await createRecipeStore.createPressed();
+                                      }
+                                    } : null,
+                                  ),
+                                ),
                           ),
                         ),
                       ],

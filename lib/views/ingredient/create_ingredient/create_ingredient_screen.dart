@@ -135,11 +135,11 @@ class _CreateIngredientScreenState extends State<CreateIngredientScreen> {
                                     ToggleButtons(
                                       borderRadius: BorderRadius.circular(20),
                                       isSelected: [
-                                        createIngredientStore.is_ml == 1,
-                                        createIngredientStore.is_ml == 0
+                                        createIngredientStore.is_ml == true,
+                                        createIngredientStore.is_ml == false
                                       ],
                                       onPressed: (int index) {
-                                        createIngredientStore.toggleIsMl(createIngredientStore.is_ml == 1 ? 0 : 1);
+                                        createIngredientStore.toggleIsMl();
                                       },
                                       color: CustomColors.just_regular_brown,
                                       selectedColor: CustomColors.sweet_cream,

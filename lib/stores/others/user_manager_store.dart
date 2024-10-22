@@ -41,7 +41,7 @@ abstract class _UserManagerStore with Store {
       final tokenString = await TokenRepository().tokenString();
 
       if (tokenString.isNotEmpty) {
-        final tokenData = AccessToken(accessToken: tokenString);
+        final tokenData = AccessToken(token: tokenString);
 
         setTokenData(tokenData);
         setUser(true);
@@ -67,7 +67,7 @@ abstract class _UserManagerStore with Store {
       String? tokenString = shared.getString('token');
 
       if (tokenString != null && tokenString.isNotEmpty) {
-        final tokenData = AccessToken.fromMap(json.decode(tokenString));
+        final tokenData = AccessToken.fromParseUser(json.decode(tokenString));
         setTokenData(tokenData);
         setUser(true);
       }
@@ -85,7 +85,7 @@ abstract class _UserManagerStore with Store {
   Future<AccessToken?> login(String email, String password) async {
     setLoading(true);
 
-    final login = await _tokenRepository.loginAPI(email, password);
+    final login = await _tokenRepository.loginParse(email, password);
     setTokenData(login);
 
     if (login != null) {

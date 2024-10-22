@@ -104,7 +104,7 @@ abstract class _CreateBrandStore with Store {
     brand!.name = _name;
    
     try {
-      await BrandRepository().editBrand(brand!);
+      await BrandRepository().updateBrand(brand!);
       setSavedOrUpdatedOrDeleted(true);
     } catch (e, s) {
       log('Store: Erro ao Editar Marca!', error: e.toString(), stackTrace: s);

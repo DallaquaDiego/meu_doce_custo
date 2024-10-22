@@ -1,133 +1,78 @@
 // ignore_for_file: depend_on_referenced_packages
-
-import 'dart:convert';
 import 'dart:developer';
-
-import 'package:http/http.dart' as http;
-
-import '../core/global/endpoints.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 import '../models/brand.dart';
 import '../stores/others/filter_search_store.dart';
-import 'token_repository.dart';
 
 class BrandRepository {
-  Future<void> createBrand(Brand brand) async {
-
-    var url = Uri.parse (baseURL + brandURL) ;
-    final token = await TokenRepository().tokenString();
-
+  Future<ParseObject?> createBrand(Brand brand) async {
     try {
-      final response = await http.post (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(brand.toMap()),
-      );
+      final parseObject = brand.toParseObject();
+      final response = await parseObject.save();
 
-      /*print('Post Brand');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if (response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201) {
-        return Future.error(json.decode(response.body));
-      }
-    } catch (e, s) {
-      log('Repository: Erro ao salvar Marca!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao salvar Marca!');
-    }
-  }
-
-  //EDITAR
-  Future <void> editBrand (Brand brand) async {
-    var url = Uri.parse (baseURL + brandURL + brand.id!.toString());
-    final token = await TokenRepository().tokenString();
-
-    try {
-      final response = await http.put (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-
-        body: jsonEncode (brand.toMap()),
-      );
-
-      /*print('Put Brand');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if ( response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201 ) {
-        return Future.error (json.decode(response.body));
-      }
-    } catch (e, s) {
-      log('Repository: Erro ao editar Marca!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao editar Marca!');
-    }
-  }
-
-  //EXCLUIR
-  Future<void> deleteBrand (String id) async {
-    var url = Uri.parse (baseURL + brandURL + id);
-    final token = await TokenRepository().tokenString();
-
-    try {
-      final response = await http.delete (
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      /*print('Delete Brand');
-      print(response.statusCode);
-      print(response.body);*/
-
-      if ( response.statusCode != 200 && response.statusCode != 204 ) {
-        return Future.error (json.decode(response.body));
-      }
-    } catch (e, s) {
-      log('Repository: Erro ao deletar Marca!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao deletar Marca!');
-    }
-  }
-
-  Future<List<Brand>?> findAllBrands({int? page, FilterSearchStore? filterSearchStore}) async {
-    final token = await TokenRepository().tokenString();
-
-    String auxUrl = '$baseURL$brandURL?page=$page&limit=15';
-
-    if (filterSearchStore!.search != '') {
-      auxUrl = '$auxUrl&search=${filterSearchStore.search}';
-    }
-    final url = Uri.parse(auxUrl);
-
-    try {
-      final response = await http.get(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
-        final List<Brand> brand = jsonData.map((h) => Brand.fromMap(h)).toList();
-        return brand;
+      if (response.success) {
+        return response.results?.first;
       } else {
-        return Future.error(json.decode(response.body));
+        log('Erro ao criar Marca: ${response.error?.message}');
+        return null;
       }
     } catch (e, s) {
-      log('Repository: Erro ao buscar Marcas!', error: e.toString(), stackTrace: s);
-      return Future.error('Erro ao buscar Marcas!');
+      log('Repository: Erro ao Criar Marca!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Criar Marca');
+    }
+  }
+
+  Future<bool> updateBrand(Brand brand) async {
+    try {
+      final parseObject = brand.toParseObject();
+      final response = await parseObject.save();
+
+      return response.success;
+    } catch (e, s) {
+      log('Repository: Erro ao Editar Marca!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Editar Marca');
+    }
+  }
+
+  Future<bool> deleteBrand(String brandId) async {
+    try {
+      final parseObject = ParseObject('Brand')..objectId = brandId;
+      final response = await parseObject.delete();
+
+      return response.success;
+    } catch (e, s) {
+      log('Repository: Erro ao Deletar Marca!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Deletar Marca');
+    }
+  }
+
+  Future<List<Brand>> getAllBrands({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+    final query = QueryBuilder(ParseObject('Brand'));
+
+    query.orderByAscending('name');
+
+    if (page != null && page > 0) {
+      final int skip = (page - 1) * limit;
+      query.setAmountToSkip(skip);
+      query.setLimit(limit);
+    }
+
+    if (filterSearchStore != null && filterSearchStore.search.isNotEmpty) {
+      query.whereContains('name', filterSearchStore.search);
+    }
+
+    try {
+      final response = await query.query();
+      //print(response.results);
+      if (response.success && response.results != null) {
+        final brands = response.results!.map((pl) => Brand.fromParse(pl)).toList();
+        return brands;
+      } else {
+        return [];
+      }
+    } catch (e, s) {
+      log('Repository: Erro ao Buscar Marcas!', error: e.toString(), stackTrace: s);
+      return Future.error('Erro ao Buscar Marcas');
     }
   }
 }

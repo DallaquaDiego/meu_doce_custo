@@ -1,26 +1,13 @@
-import 'user.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 class AccessToken {
-  User? user;
-  String accessToken;
+  AccessToken({required this.token});
 
-  AccessToken({
-    this.user,
-    required this.accessToken,
-  });
+  final String token;
 
-  @override
-  String toString() {
-    return 'AccessToken{user: $user, accessToken: $accessToken}';
+  factory AccessToken.fromParseUser(ParseUser user) {
+    return AccessToken(
+      token: user.sessionToken ?? '',
+    );
   }
-
-  factory AccessToken.fromMap(Map<String, dynamic> json) => AccessToken(
-    user: User.fromMap(json['user'] ?? {}),
-    accessToken: json['AccessToken'] ?? '',
-  );
-
-  Map<String, dynamic> toMap() => {
-    "user": user,
-    "AccessToken": accessToken,
-  };
 }

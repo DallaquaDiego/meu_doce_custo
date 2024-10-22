@@ -1,6 +1,4 @@
-import 'package:get_it/get_it.dart';
-
-import '../stores/others/user_manager_store.dart';
+import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
 class Brand {
   Brand({
@@ -8,7 +6,7 @@ class Brand {
     this.name,
   });
 
-  int? id;
+  String? id;
   String? name;
 
   @override
@@ -16,23 +14,18 @@ class Brand {
     return 'Brand { id: $id, name: $name}';
   }
 
-  Map<String, dynamic> toMap() {
-    final userManagerStore = GetIt.I<UserManagerStore>();
-    if (userManagerStore.tokenData != null && userManagerStore.tokenData!.user != null) {
-      final user_id = userManagerStore.tokenData!.user!.id!;
-      return {
-        'name': name,
-        'user_id': user_id,
-      };
-    } else {
-      throw Exception("Usuário não autenticado. Não é possível criar a marca.");
-    }
+  ParseObject toParseObject() {
+    final parseObject = ParseObject('Brand')
+      ..objectId = id
+      ..set('name', name!);
+    return parseObject;
   }
 
-  factory Brand.fromMap(Map<String, dynamic> map) {
+
+  factory Brand.fromParse(ParseObject parseObject) {
     return Brand(
-      id: map['id'],
-      name: (map['name'] ?? '') as String,
+      id: parseObject.objectId,
+      name: parseObject.get<String>('name'),
     );
   }
 }
