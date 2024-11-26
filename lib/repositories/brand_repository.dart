@@ -46,7 +46,7 @@ class BrandRepository {
     }
   }
 
-  Future<List<Brand>> getAllBrands({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+  Future<List<Brand>> getAllBrands({int? page, int limit = 100, FilterSearchStore? filterSearchStore}) async {
     final query = QueryBuilder(ParseObject('Brand'));
 
     query.orderByAscending('name');

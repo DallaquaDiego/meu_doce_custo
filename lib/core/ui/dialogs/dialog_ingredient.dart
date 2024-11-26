@@ -14,6 +14,7 @@ class DialogIngredient extends StatelessWidget {
   final Ingredient? selectedIngredient;
 
   final divider = const Divider(height: 0);
+  final TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -67,12 +68,33 @@ class DialogIngredient extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: TextField(
+                    controller: searchController,
                     onChanged: (value) => ingredientStore.runFilter(value),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      suffixIcon: Icon(
-                        Icons.search,
-                        color: CustomColors.mint,
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.search,
+                              color: CustomColors.mint,
+                            ),
+                            onPressed: () {
+                              ingredientStore.runFilter(searchController.text);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.clear,
+                              color: CustomColors.mint,
+                            ),
+                            onPressed: () {
+                              searchController.clear();
+                              ingredientStore.runFilter('');
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -149,7 +171,7 @@ class DialogIngredient extends StatelessWidget {
                 ),
               );
             },
-          )
+          ),
         ],
       ),
     );

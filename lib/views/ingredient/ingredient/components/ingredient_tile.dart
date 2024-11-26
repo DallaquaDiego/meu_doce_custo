@@ -43,7 +43,7 @@ class IngredientTile extends StatelessWidget {
             ),
             const SizedBox(height: 1),
             Text(
-              'Preço: ${ingredient.price}',
+              'Preço: R\$${ingredient.price!.toStringAsFixed(2)}',
               style: TextStyle(
                 color: CustomColors.just_regular_brown.withOpacity(0.8),
                 fontWeight: FontWeight.w400,

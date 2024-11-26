@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -9,9 +10,10 @@ import '../../core/global/custom_colors.dart';
 import '../../core/global/utils.dart';
 import '../../stores/others/login_store.dart';
 import '../base/base_screen.dart';
+import '../register/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key});
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -212,6 +214,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     },
                   ),
+                ),
+                const SizedBox(height: 40),
+                RichText(
+                  text: TextSpan(
+                    text: 'Não possui uma conta? ',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: CustomColors.mint,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Cadastre-se',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: CustomColors.gay_pink,
+                        ),
+                        recognizer: TapGestureRecognizer()..onTap = () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterScreen(),
+                              ),
+                            );
+                          },
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

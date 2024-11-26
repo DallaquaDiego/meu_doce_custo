@@ -7,7 +7,6 @@ import '../../../stores/list/brand_store.dart';
 import '../../global/custom_colors.dart';
 import '../empty_result.dart';
 
-
 class DialogBrand extends StatelessWidget {
   DialogBrand({Key? key, this.selectedBrand}) : super(key: key);
 
@@ -15,6 +14,7 @@ class DialogBrand extends StatelessWidget {
   final Brand? selectedBrand;
 
   final divider = const Divider(height: 0);
+  final TextEditingController searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -72,12 +72,33 @@ class DialogBrand extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: TextField(
+                    controller: searchController,
                     onChanged: (value) => brandStore.runFilter(value),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      suffixIcon: Icon(
-                        Icons.search,
-                        color: CustomColors.mint,
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.search,
+                              color: CustomColors.mint,
+                            ),
+                            onPressed: () {
+                              brandStore.runFilter(searchController.text);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.clear,
+                              color: CustomColors.mint,
+                            ),
+                            onPressed: () {
+                              searchController.clear();
+                              brandStore.runFilter('');
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -152,11 +173,9 @@ class DialogBrand extends StatelessWidget {
                 ),
               );
             },
-          )
+          ),
         ],
       ),
     );
   }
 }
-
-

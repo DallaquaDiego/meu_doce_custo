@@ -108,7 +108,7 @@ class RecipeScreen extends StatelessWidget {
                       height: 16,
                     ),
                     Expanded(
-                      child: ListView.separated(
+                      child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
                           if (index < recipeStore.listRecipe.length) {
@@ -117,7 +117,6 @@ class RecipeScreen extends StatelessWidget {
                               children: [
                                 if (index == 0) const ListDivider(),
                                 RecipeTile(recipe: recipe),
-                                if (index == recipeStore.listRecipe.length - 1) const ListDivider(),
                               ],
                             );
                           }
@@ -129,7 +128,6 @@ class RecipeScreen extends StatelessWidget {
                             ),
                           );
                         },
-                        separatorBuilder: (_, index) => const ListDivider(),
                         itemCount: recipeStore.itemCount,
                       ),
                     ),

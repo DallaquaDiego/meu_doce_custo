@@ -48,7 +48,7 @@ class RecipeCategoryRepository {
     }
   }
 
-  Future<List<RecipeCategory>> getAllRecipeCategories({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+  Future<List<RecipeCategory>> getAllRecipeCategories({int? page, int limit = 50, FilterSearchStore? filterSearchStore}) async {
     final query = QueryBuilder(ParseObject('RecipeCategory'));
 
     query.orderByAscending('name');

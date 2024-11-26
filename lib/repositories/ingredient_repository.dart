@@ -9,6 +9,18 @@ class IngredientRepository {
   Future<ParseObject?> createIngredient(Ingredient ingredient) async {
     try {
       final parseObject = ingredient.toParseObject();
+
+      final currentUser = await ParseUser.currentUser() as ParseUser?;
+      if (currentUser == null) {
+        throw Exception('Usuário não autenticado.');
+      }
+
+      final acl = ParseACL(owner: currentUser);
+      acl.setReadAccess(userId: currentUser.objectId!, allowed: true);
+      acl.setWriteAccess(userId: currentUser.objectId!, allowed: true);
+
+      parseObject.setACL(acl);
+
       final response = await parseObject.save();
 
       if (response.success) {
@@ -47,7 +59,7 @@ class IngredientRepository {
     }
   }
 
-  Future<List<Ingredient>> getAllIngredients({int? page, int limit = 15, FilterSearchStore? filterSearchStore}) async {
+  Future<List<Ingredient>> getAllIngredients({int? page, int limit = 1000, FilterSearchStore? filterSearchStore}) async {
     final query = QueryBuilder(ParseObject('Ingredient'));
 
     query.includeObject(['brand']);

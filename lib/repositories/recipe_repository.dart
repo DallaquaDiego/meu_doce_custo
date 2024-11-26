@@ -10,6 +10,18 @@ class RecipeRepository {
   Future<ParseObject?> createRecipe(Recipe recipe) async {
     try {
       final parseObject = recipe.toParseObject();
+
+      final currentUser = await ParseUser.currentUser() as ParseUser?;
+      if (currentUser == null) {
+        throw Exception('Usuário não autenticado.');
+      }
+
+      final acl = ParseACL(owner: currentUser);
+      acl.setReadAccess(userId: currentUser.objectId!, allowed: true);
+      acl.setWriteAccess(userId: currentUser.objectId!, allowed: true);
+
+      parseObject.setACL(acl);
+
       final response = await parseObject.save();
 
       if (response.success) {
@@ -35,6 +47,7 @@ class RecipeRepository {
       return Future.error('Erro ao Editar Receita');
     }
   }
+
 
   Future<bool> deleteRecipe(String recipeId) async {
     try {
@@ -66,7 +79,6 @@ class RecipeRepository {
 
     try {
       final response = await query.query();
-      //print(response.results);
       if (response.success && response.results != null) {
         final recipes = response.results!.map((pl) =>
             Recipe.fromParse(pl)).toList();

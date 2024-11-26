@@ -83,8 +83,6 @@ abstract class _CreateBrandStore with Store {
       name: _name,
     );
 
-    print(brand);
-
     try {
       await BrandRepository().createBrand(brand!);
       setSavedOrUpdatedOrDeleted(true);

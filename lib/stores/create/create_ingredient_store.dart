@@ -89,7 +89,7 @@ abstract class _CreateIngredientStore with Store {
   bool _is_ml = false;
 
   @action
-  void toggleIsMl() => !_is_ml;
+  void toggleIsMl() => _is_ml = !_is_ml;
 
   @computed
   bool get isMlValid => _is_ml != null;
