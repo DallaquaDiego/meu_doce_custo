@@ -6,7 +6,6 @@ class Back4App {
     const clientKey = '9Bdfdn9bMUX7yT7ZcTDb7ClQsdWrA18Ei1o2wwHS';
     const parseServerURL = 'https://parseapi.back4app.com';
 
-
     await Parse().initialize(applicationId, parseServerURL, clientKey: clientKey, autoSendSessionId: true, debug: false);
 
   }

@@ -91,7 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   secret: false,
                                 ),
                               ),
-                              TitleTextForm(title: 'Digite seu E-mal'),
+                              TitleTextForm(title: 'Digite seu E-mail'),
                               Observer(
                                 builder: (context) => CustomFormField(
                                   initialvalue: createUserStore.email,
